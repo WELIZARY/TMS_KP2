@@ -1,0 +1,60 @@
+---
+- name: настройка сервера
+  hosts: servers
+  become: yes
+
+  tasks:
+    - name: обновляем кэш
+      apt:
+        update_cache: yes
+
+    - name: ставим зависимости
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+
+    - name: docker gpg ключ
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: добавляем репозиторий докера
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+        state: present
+
+    - name: установка докера
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+
+    - name: запускаем docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: добавляем пользователя в группу докера
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: запуск дженкинс контейнера
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        state: started
+        restart_policy: always
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+        volumes:
+          - jenkins_home:/var/jenkins_home
