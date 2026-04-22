@@ -1,0 +1,5 @@
+.terraform/
+terraform.tfstate #файл состояния в gcs-бакете
+terraform.tfstate.backup
+*.tfplan
+*.tfvars
